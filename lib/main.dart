@@ -1,174 +1,86 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
-void main() => runApp(const TicTacToeGame());
+void main() => runApp(const BlocksGame());
 
-class TicTacToeGame extends StatelessWidget {
-  const TicTacToeGame({super.key});
+class BlocksGame extends StatelessWidget {
+  const BlocksGame({super.key});
 
   @override
   Widget build(BuildContext context) {
     return const MaterialApp(
-      title: 'Tic Tac Toe Game',
+      title: 'Blocks Game',
       debugShowCheckedModeBanner: false,
-      home: TicTacToeScreen(),
+      home: BlocksGameScreen(),
     );
   }
 }
 
-class TicTacToeScreen extends StatefulWidget {
-  const TicTacToeScreen({super.key});
+class BlocksGameScreen extends StatefulWidget {
+  const BlocksGameScreen({super.key});
 
   @override
-  _TicTacToeScreenState createState() => _TicTacToeScreenState();
+  _BlocksGameScreenState createState() => _BlocksGameScreenState();
 }
 
-class _TicTacToeScreenState extends State<TicTacToeScreen> {
-  late List<List<String>> board;
-  late String currentPlayer;
-  late bool gameEnded;
+class _BlocksGameScreenState extends State<BlocksGameScreen> {
+  late List<List<Color>> grid;
+  int rows = 8;
+  int columns = 5;
 
   @override
   void initState() {
     super.initState();
-    startGame();
+    initializeGrid();
   }
 
-  void startGame() {
-    board = List.generate(3, (_) => List.filled(3, ''));
-    currentPlayer = 'X';
-    gameEnded = false;
+  void initializeGrid() {
+    grid = List.generate(rows, (_) => List.filled(columns, getRandomColor()));
   }
 
-  void makeMove(int row, int col) {
-    if (board[row][col] == '' && !gameEnded) {
-      setState(() {
-        board[row][col] = currentPlayer;
-        if (checkWinner(row, col)) {
-          gameEnded = true;
-          showWinnerDialog();
-        } else if (isBoardFull()) {
-          gameEnded = true;
-          showDrawDialog();
-        } else {
-          currentPlayer = (currentPlayer == 'X') ? 'O' : 'X';
-        }
-      });
-    }
+  Color getRandomColor() {
+    List<Color> colors = [Colors.red, Colors.blue, Colors.green, Colors.yellow];
+    return colors[Random().nextInt(colors.length)];
   }
 
-  bool checkWinner(int row, int col) {
-    // Check row
-    if (board[row].every((element) => element == currentPlayer)) {
-      return true;
-    }
-
-    // Check column
-    if (List.generate(3, (i) => board[i][col])
-        .every((element) => element == currentPlayer)) {
-      return true;
-    }
-
-    // Check diagonals
-    if ((row == col || row + col == 2) &&
-        (List.generate(3, (i) => board[i][i])
-                .every((element) => element == currentPlayer) ||
-            List.generate(3, (i) => board[i][2 - i])
-                .every((element) => element == currentPlayer))) {
-      return true;
-    }
-
-    return false;
-  }
-
-  bool isBoardFull() {
-    return board.every((row) => row.every((cell) => cell != ''));
-  }
-
-  void showWinnerDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Game Over'),
-          content: Text('Player $currentPlayer wins!'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                startGame();
-              },
-              child: const Text('Play Again'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void showDrawDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Game Over'),
-          content: const Text('It\'s a draw!'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                startGame();
-              },
-              child: const Text('Play Again'),
-            ),
-          ],
-        );
-      },
-    );
+  void onTap(int row, int col) {
+    setState(() {
+      grid[row][col] = Colors.transparent;
+      for (int i = row; i > 0; i--) {
+        grid[i][col] = grid[i - 1][col];
+      }
+      grid[0][col] = getRandomColor();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Tic Tac Toe'),
+        title: const Text('Blocks Game'),
       ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'Player Turn: $currentPlayer',
-              style: const TextStyle(fontSize: 20),
-            ),
-            const SizedBox(height: 20),
-            Column(
+          children: List.generate(
+            rows,
+            (row) => Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(
-                3,
-                (row) => Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(
-                    3,
-                    (col) => GestureDetector(
-                      onTap: () => makeMove(row, col),
-                      child: Container(
-                        width: 60,
-                        height: 60,
-                        decoration: BoxDecoration(
-                          border: Border.all(),
-                        ),
-                        child: Center(
-                          child: Text(
-                            board[row][col],
-                            style: const TextStyle(fontSize: 30),
-                          ),
-                        ),
-                      ),
-                    ),
+                columns,
+                (col) => GestureDetector(
+                  onTap: () => onTap(row, col),
+                  child: Container(
+                    width: 50,
+                    height: 50,
+                    margin: const EdgeInsets.all(4),
+                    color: grid[row][col],
                   ),
                 ),
               ),
             ),
-          ],
+          ),
         ),
       ),
     );
